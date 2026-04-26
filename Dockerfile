@@ -62,12 +62,12 @@ COPY scripts/entrypoint.sh /wrapper/entrypoint.sh
 COPY scripts/bootstrap-ceo.mjs /wrapper/template/bootstrap-ceo.mjs
 RUN chmod +x /wrapper/entrypoint.sh
 
-# Устанавливаем CLI инструменты, необходимые для работы агентов
+# Устанавливаем CLI инструменты, включая правильный пакет hermes
 RUN npm install --global --omit=dev \
     @anthropic-ai/claude-code@latest \
     @openai/codex@latest \
     opencode-ai \
-    hermes-agent@latest
+    @nousresearch/hermes@latest
 
 RUN npm install --global --omit=dev tsx
 RUN mkdir -p /paperclip \
