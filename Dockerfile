@@ -13,6 +13,18 @@ ARG PAPERCLIP_REF=v2026.416.0
 
 WORKDIR /paperclip
 RUN git clone --depth 1 --branch "${PAPERCLIP_REF}" "${PAPERCLIP_REPO}" .
+
+# --- START ADAPTER PATCH ---
+# Устанавливаем зависимость адаптера прямо в пакет сервера
+RUN pnpm --filter @paperclipai/server add hermes-paperclip-adapter
+
+# Копируем скрипт регистрации из твоего репозитория в билд-контейнер
+COPY register-adapter.mjs /register-adapter.mjs
+
+# Запускаем скрипт, который модифицирует registry.ts
+RUN node /register-adapter.mjs
+# --- END ADAPTER PATCH ---
+
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @paperclipai/ui build
 RUN pnpm --filter @paperclipai/plugin-sdk build
@@ -23,8 +35,6 @@ RUN test -f server/dist/index.js
 FROM node:22-bookworm-slim
 ENV NODE_ENV=production
 ENV CLAUDE_CODE_BUBBLEWRAP=1
-# Match upstream production image defaults (paperclipai/paperclip Dockerfile) so
-# agent tooling, OpenCode, and config paths behave the same in containers.
 ENV HOME=/paperclip \
     PAPERCLIP_INSTANCE_ID=default \
     PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
@@ -52,14 +62,12 @@ COPY scripts/entrypoint.sh /wrapper/entrypoint.sh
 COPY scripts/bootstrap-ceo.mjs /wrapper/template/bootstrap-ceo.mjs
 RUN chmod +x /wrapper/entrypoint.sh
 
-# Optional local adapters/tools parity with upstream Dockerfile.
+# Устанавливаем CLI инструменты, необходимые для работы агентов
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai
 RUN npm install --global --omit=dev tsx
 RUN mkdir -p /paperclip \
     && chown -R node:node /app /paperclip /wrapper
 
-# Railway sets PORT at runtime and this process binds to it.
-# Entrypoint runs as root, fixes /paperclip volume permissions, then execs as node.
 EXPOSE 3100
 ENTRYPOINT ["/wrapper/entrypoint.sh"]
 CMD ["node", "/wrapper/src/server.js"]
