@@ -64,6 +64,7 @@ RUN chmod +x /wrapper/entrypoint.sh
 
 # Устанавливаем CLI инструменты, необходимые для работы агентов
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai
+RUN npm install --global --omit=dev hermes-agent
 RUN npm install --global --omit=dev tsx
 RUN mkdir -p /paperclip \
     && chown -R node:node /app /paperclip /wrapper
