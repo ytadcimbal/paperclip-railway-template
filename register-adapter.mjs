@@ -1,8 +1,24 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
-// This path is relative to the cloned repo inside the Docker container
-const registryPath = '/paperclip/packages/server/src/adapters/registry.ts';
+// Ищем файл registry.ts рекурсивно внутри папки /paperclip
+function findRegistryFile(dir) {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+        const fullPath = path.join(dir, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+            if (file === 'node_modules' || file === '.git') continue;
+            const found = findRegistryFile(fullPath);
+            if (found) return found;
+        } else if (file === 'registry.ts' && fullPath.includes('adapters')) {
+            return fullPath;
+        }
+    }
+    return null;
+}
+
+const registryPath = findRegistryFile('/paperclip');
 
 const registrationCode = `
 import * as hermesLocal from "hermes-paperclip-adapter";
@@ -26,17 +42,17 @@ registry.set("hermes_local", {
 });
 `;
 
-if (fs.existsSync(registryPath)) {
+if (registryPath) {
+    console.log(`🎯 Found registry at: ${registryPath}`);
     let content = fs.readFileSync(registryPath, 'utf8');
-    // Prevent double registration if script runs twice
     if (!content.includes('hermes_local')) {
         content += registrationCode;
         fs.writeFileSync(registryPath, content);
-        console.log("✅ Successfully registered hermes_local in registry.ts");
+        console.log("✅ Hermes adapter registered successfully.");
     } else {
-        console.log("ℹ️ hermes_local already registered.");
+        console.log("ℹ️ Hermes adapter already present.");
     }
 } else {
-    console.error("❌ Could not find registry.ts at " + registryPath);
+    console.error("❌ FATAL: Could not find registry.ts anywhere in /paperclip");
     process.exit(1);
 }
