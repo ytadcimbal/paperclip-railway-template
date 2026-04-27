@@ -67,7 +67,7 @@ RUN npm install --global --omit=dev \
     @anthropic-ai/claude-code@latest \
     @openai/codex@latest \
     opencode-ai \
-    @nousresearch/hermes@latest
+    https://github.com/NousResearch/hermes-paperclip-adapter.git
 
 RUN npm install --global --omit=dev tsx
 RUN mkdir -p /paperclip \
