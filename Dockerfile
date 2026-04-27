@@ -67,9 +67,8 @@ RUN npm install --global --omit=dev \
     opencode-ai \
     tsx
 
-# Устанавливаем Hermes Agent через Python (Pip)
-# Флаг --break-system-packages нужен для Debian 12+
-RUN pip3 install --no-cache-dir --break-system-packages hermes-agent
+# Устанавливаем Hermes Agent напрямую из репозитория через pip
+RUN pip3 install --no-cache-dir --break-system-packages git+https://github.com/NousResearch/Hermes-Agent.git
 
 RUN mkdir -p /paperclip \
     && chown -R node:node /app /paperclip /wrapper
